@@ -106,19 +106,24 @@ protected:
 
 	unsigned char m_navMeshDrawFlags;
 
-	float m_cellSize;
-	float m_cellHeight;
-	float m_agentHeight;
-	float m_agentRadius;
-	float m_agentMaxClimb;
-	float m_agentMaxSlope;
-	float m_regionMinSize;
-	float m_regionMergeSize;
-	float m_edgeMaxLen;
-	float m_edgeMaxError;
-	float m_vertsPerPoly;
-	float m_detailSampleDist;
-	float m_detailSampleMaxError;
+    /* 基本设定 */
+	float m_cellSize; // 平面格子的大小
+	float m_cellHeight; // 格子的高度
+	float m_agentHeight; // 人物的高度
+	float m_agentRadius; // 人物的半径
+	float m_agentMaxClimb; // 人物最大爬升高度
+	float m_agentMaxSlope; // 人物最大爬升坡度
+    /* 划分区域 */
+	float m_regionMinSize; // 区域最小大小
+	float m_regionMergeSize; // 区域合并大小
+    /* 轮廓 */
+	float m_edgeMaxLen; // 边缘最大长度
+	float m_edgeMaxError; // 超过这个值的边缘会被分割，这个值越小，分割的越多，越精细
+	float m_vertsPerPoly; // 多边形顶点数
+    /* 采样，用于构建高度场 */
+	float m_detailSampleDist; // 采样间隔
+	float m_detailSampleMaxError; // 采样最大误差，这个值越小，采样越精细
+
 	int m_partitionType;
 
 	bool m_filterLowHangingObstacles;

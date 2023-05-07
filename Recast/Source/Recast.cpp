@@ -307,8 +307,10 @@ bool rcCreateHeightfield(rcContext* context, rcHeightfield& heightfield, int siz
                          const float* minBounds, const float* maxBounds,
                          float cellSize, float cellHeight)
 {
+    // 忽略未使用的参数，防止报错
 	rcIgnoreUnused(context);
 
+    // 高度场的内存空间分配
 	heightfield.width = sizeX;
 	heightfield.height = sizeZ;
 	rcVcopy(heightfield.bmin, minBounds);
@@ -338,18 +340,22 @@ void rcMarkWalkableTriangles(rcContext* context, const float walkableSlopeAngle,
                              const int* tris, const int numTris,
                              unsigned char* triAreaIDs)
 {
+    // 忽略未使用的参数，防止报错
 	rcIgnoreUnused(context);
 	rcIgnoreUnused(numVerts);
 
+    // 计算cos(θ)
 	const float walkableThr = cosf(walkableSlopeAngle / 180.0f * RC_PI);
 
 	float norm[3];
-
+    // 遍历所有三角形
 	for (int i = 0; i < numTris; ++i)
 	{
 		const int* tri = &tris[i * 3];
+        // norm中保存了三角形的法线
 		calcTriNormal(&verts[tri[0] * 3], &verts[tri[1] * 3], &verts[tri[2] * 3], norm);
 		// Check if the face is walkable.
+        // 如果三角形的法线的Y值大于cos(θ)，那么这个三角形是可行走的(即对应角的cos值小于cos(θ))
 		if (norm[1] > walkableThr)
 		{
 			triAreaIDs[i] = RC_WALKABLE_AREA;
