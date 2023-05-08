@@ -501,12 +501,14 @@ bool Sample_SoloMesh::handleBuild()
 
 	//
 	// Step 4. Partition walkable surface to simple regions.
+    // 区域划分
 	//
 
 	// Compact the heightfield so that it is faster to handle from now on.
 	// This will result more cache coherent data as well as the neighbours
 	// between walkable cells will be calculated.
-	m_chf = rcAllocCompactHeightfield();
+	// 构建紧缩高度场
+    m_chf = rcAllocCompactHeightfield();
 	if (!m_chf)
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Out of memory 'chf'.");
@@ -517,7 +519,8 @@ bool Sample_SoloMesh::handleBuild()
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
 		return false;
 	}
-	
+
+    // 构建紧缩高度场后，高度场退出舞台
 	if (!m_keepInterResults)
 	{
 		rcFreeHeightField(m_solid);
@@ -525,6 +528,7 @@ bool Sample_SoloMesh::handleBuild()
 	}
 		
 	// Erode the walkable area by agent radius.
+    // 根据角色半径裁剪可行走区域
 	if (!rcErodeWalkableArea(m_ctx, m_cfg.walkableRadius, *m_chf))
 	{
 		m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
@@ -532,6 +536,7 @@ bool Sample_SoloMesh::handleBuild()
 	}
 
 	// (Optional) Mark areas.
+    // 标记area
 	const ConvexVolume* vols = m_geom->getConvexVolumes();
 	for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
 		rcMarkConvexPolyArea(m_ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *m_chf);
@@ -562,10 +567,12 @@ bool Sample_SoloMesh::handleBuild()
 	//   - can be slow and create a bit ugly tessellation (still better than monotone)
 	//     if you have large open areas with small obstacles (not a problem if you use tiles)
 	//   * good choice to use for tiled navmesh with medium and small sized tiles
-	
+
+    // 分水岭算法
 	if (m_partitionType == SAMPLE_PARTITION_WATERSHED)
 	{
 		// Prepare for region partitioning, by calculating distance field along the walkable surface.
+        // 构建距离场
 		if (!rcBuildDistanceField(m_ctx, *m_chf))
 		{
 			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
@@ -573,6 +580,7 @@ bool Sample_SoloMesh::handleBuild()
 		}
 		
 		// Partition the walkable surface into simple regions without holes.
+        // 划分区域
 		if (!rcBuildRegions(m_ctx, *m_chf, 0, m_cfg.minRegionArea, m_cfg.mergeRegionArea))
 		{
 			m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
@@ -601,6 +609,7 @@ bool Sample_SoloMesh::handleBuild()
 	
 	//
 	// Step 5. Trace and simplify region contours.
+    // 轮廓化
 	//
 	
 	// Create contours.

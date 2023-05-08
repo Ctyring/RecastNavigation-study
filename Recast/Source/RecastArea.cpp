@@ -53,6 +53,7 @@ bool rcErodeWalkableArea(rcContext* ctx, int radius, rcCompactHeightfield& chf)
 	memset(dist, 0xff, sizeof(unsigned char)*chf.spanCount);
 	
 	// Mark boundary cells.
+    // 标记出边界，本身span为不可走或者与四方向邻居存在不联通，则span为边界，dist[i] = 0
 	for (int y = 0; y < h; ++y)
 	{
 		for (int x = 0; x < w; ++x)
@@ -82,7 +83,8 @@ bool rcErodeWalkableArea(rcContext* ctx, int radius, rcCompactHeightfield& chf)
 						}
 					}
 					// At least one missing neighbour.
-					if (nc != 4)
+					// 与某个邻居不联通
+                    if (nc != 4)
 						dist[i] = 0;
 				}
 			}
@@ -90,7 +92,9 @@ bool rcErodeWalkableArea(rcContext* ctx, int radius, rcCompactHeightfield& chf)
 	}
 	
 	unsigned char nd;
-	
+
+    // 计算反体素与可行走边缘的最近距离并保存在dis数组中
+
 	// Pass 1
 	for (int y = 0; y < h; ++y)
 	{
@@ -206,7 +210,8 @@ bool rcErodeWalkableArea(rcContext* ctx, int radius, rcCompactHeightfield& chf)
 			}
 		}
 	}
-	
+
+    // 如果与边缘距离小于角色直径则标记为不可行走
 	const unsigned char thr = (unsigned char)(radius*2);
 	for (int i = 0; i < chf.spanCount; ++i)
 		if (dist[i] < thr)
@@ -354,7 +359,7 @@ void rcMarkBoxArea(rcContext* ctx, const float* bmin, const float* bmax, unsigne
 	}
 }
 
-
+// 判断点是否在多边形内部
 static int pointInPoly(int nvert, const float* verts, const float* p)
 {
 	int i, j, c = 0;
@@ -362,6 +367,8 @@ static int pointInPoly(int nvert, const float* verts, const float* p)
 	{
 		const float* vi = &verts[i*3];
 		const float* vj = &verts[j*3];
+        // ((vi[2] > p[2]) != (vj[2] > p[2])) 过滤掉所有不与点p的水平线相交的线
+        // (p[0] < (vj[0]-vi[0]) * (p[2]-vi[2]) / (vj[2]-vi[2]) + vi[0]) 叉乘，当p在中间时，触发一次c为正数，在左右时，触发两次，在上下时，触发0次
 		if (((vi[2] > p[2]) != (vj[2] > p[2])) &&
 			(p[0] < (vj[0]-vi[0]) * (p[2]-vi[2]) / (vj[2]-vi[2]) + vi[0]) )
 			c = !c;
@@ -431,7 +438,7 @@ void rcMarkConvexPolyArea(rcContext* ctx, const float* verts, const int nverts,
 					p[0] = chf.bmin[0] + (x+0.5f)*chf.cs; 
 					p[1] = 0;
 					p[2] = chf.bmin[2] + (z+0.5f)*chf.cs; 
-
+                    // 如果span在部署的多边形地形内，则标记area
 					if (pointInPoly(nverts, verts, p))
 					{
 						chf.areas[i] = areaId;

@@ -105,6 +105,7 @@ static void walkContour(int x, int y, int i,
 						unsigned char* flags, rcIntArray& points)
 {
 	// Choose the first non-connected edge
+    // 选择第一个非联通边(方向)
 	unsigned char dir = 0;
 	while ((flags[i] & (1 << dir)) == 0)
 		dir++;
@@ -117,6 +118,7 @@ static void walkContour(int x, int y, int i,
 	int iter = 0;
 	while (++iter < 40000)
 	{
+        // 如果是非联通边
 		if (flags[i] & (1 << dir))
 		{
 			// Choose the edge corner
@@ -125,12 +127,17 @@ static void walkContour(int x, int y, int i,
 			int px = x;
 			int py = getCornerHeight(x, y, i, dir, chf, isBorderVertex);
 			int pz = y;
+            // 选取轮廓(为了保证周围的区域选出来的轮廓重合)
 			switch(dir)
 			{
+                // 向左：取上
 				case 0: pz++; break;
+                // 向上：取右上
 				case 1: px++; pz++; break;
+                // 向右：取右
 				case 2: px++; break;
-			}
+			    // 向下：取自身
+            }
 			int r = 0;
 			const rcCompactSpan& s = chf.spans[i];
 			if (rcGetCon(s, dir) != RC_NOT_CONNECTED)
@@ -154,6 +161,7 @@ static void walkContour(int x, int y, int i,
 			flags[i] &= ~(1 << dir); // Remove visited edges
 			dir = (dir+1) & 0x3;  // Rotate CW
 		}
+        // 如果是联通边
 		else
 		{
 			int ni = -1;
@@ -834,6 +842,7 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 	
 	rcVcopy(cset.bmin, chf.bmin);
 	rcVcopy(cset.bmax, chf.bmax);
+    // 去掉边界
 	if (borderSize > 0)
 	{
 		// If the heightfield was build with bordersize, remove the offset.
@@ -849,13 +858,15 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 	cset.height = chf.height - chf.borderSize*2;
 	cset.borderSize = chf.borderSize;
 	cset.maxError = maxError;
-	
+
+    // 最多轮廓数
 	int maxContours = rcMax((int)chf.maxRegions, 8);
 	cset.conts = (rcContour*)rcAlloc(sizeof(rcContour)*maxContours, RC_ALLOC_PERM);
 	if (!cset.conts)
 		return false;
 	cset.nconts = 0;
-	
+
+    // flags保存每个span四个方向是否为边界
 	rcScopedDelete<unsigned char> flags((unsigned char*)rcAlloc(sizeof(unsigned char)*chf.spanCount, RC_ALLOC_TEMP));
 	if (!flags)
 	{
@@ -866,6 +877,7 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 	ctx->startTimer(RC_TIMER_BUILD_CONTOURS_TRACE);
 	
 	// Mark boundaries.
+    // 标记span的四个方向是否为边界
 	for (int y = 0; y < h; ++y)
 	{
 		for (int x = 0; x < w; ++x)
@@ -890,9 +902,11 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 						const int ai = (int)chf.cells[ax+ay*w].index + rcGetCon(s, dir);
 						r = chf.spans[ai].reg;
 					}
+                    // 将联通的方向标记为1
 					if (r == chf.spans[i].reg)
 						res |= (1 << dir);
 				}
+                // 使用异或将不联通的方向标记为1
 				flags[i] = res ^ 0xf; // Inverse, mark non connected edges.
 			}
 		}
@@ -907,9 +921,11 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 	{
 		for (int x = 0; x < w; ++x)
 		{
+            // 遍历所有span
 			const rcCompactCell& c = chf.cells[x+y*w];
 			for (int i = (int)c.index, ni = (int)(c.index+c.count); i < ni; ++i)
 			{
+                // 没有不联通的边或四面都不联通
 				if (flags[i] == 0 || flags[i] == 0xf)
 				{
 					flags[i] = 0;
@@ -924,6 +940,7 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 				simplified.clear();
 				
 				ctx->startTimer(RC_TIMER_BUILD_CONTOURS_TRACE);
+                // 描绘轮廓点
 				walkContour(x, y, i, chf, flags, verts);
 				ctx->stopTimer(RC_TIMER_BUILD_CONTOURS_TRACE);
 				
@@ -931,8 +948,7 @@ bool rcBuildContours(rcContext* ctx, const rcCompactHeightfield& chf,
 				simplifyContour(verts, simplified, maxError, maxEdgeLen, buildFlags);
 				removeDegenerateSegments(simplified);
 				ctx->stopTimer(RC_TIMER_BUILD_CONTOURS_SIMPLIFY);
-				
-				
+
 				// Store region->contour remap info.
 				// Create contour.
 				if (simplified.size()/4 >= 3)

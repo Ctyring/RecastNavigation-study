@@ -415,6 +415,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 
 	const int xSize = heightfield.width;
 	const int zSize = heightfield.height;
+    // 遍历计算出高度场中所有非空的span的数量
 	const int spanCount = rcGetHeightFieldSpanCount(context, heightfield);
 
 	// Fill in header.
@@ -456,6 +457,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 	// Fill in cells and spans.
 	int currentCellIndex = 0;
 	const int numColumns = xSize * zSize;
+    // 遍历每一个列
 	for (int columnIndex = 0; columnIndex < numColumns; ++columnIndex)
 	{
 		const rcSpan* span = heightfield.spans[columnIndex];
@@ -465,16 +467,18 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 		{
 			continue;
 		}
-			
+
 		rcCompactCell& cell = compactHeightfield.cells[columnIndex];
 		cell.index = currentCellIndex;
 		cell.count = 0;
 
 		for (; span != NULL; span = span->next)
 		{
+            // 遍历y轴上所有的体素
 			if (span->area != RC_NULL_AREA)
 			{
-				const int bot = (int)span->smax;
+				// 构造反体素
+                const int bot = (int)span->smax;
 				const int top = span->next ? (int)span->next->smin : MAX_HEIGHT;
 				compactHeightfield.spans[currentCellIndex].y = (unsigned short)rcClamp(bot, 0, 0xffff);
 				compactHeightfield.spans[currentCellIndex].h = (unsigned char)rcClamp(top - bot, 0, 0xff);
@@ -486,6 +490,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 	}
 	
 	// Find neighbour connections.
+    // 建立反体素之间的联通关系
 	const int MAX_LAYERS = RC_NOT_CONNECTED - 1;
 	int maxLayerIndex = 0;
 	const int zStride = xSize; // for readability
@@ -500,6 +505,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 
 				for (int dir = 0; dir < 4; ++dir)
 				{
+                    // 先设置为不联通
 					rcSetCon(span, dir, RC_NOT_CONNECTED);
 					const int neighborX = x + rcGetDirOffsetX(dir);
 					const int neighborZ = z + rcGetDirOffsetY(dir);
@@ -520,6 +526,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 
 						// Check that the gap between the spans is walkable,
 						// and that the climb height between the gaps is not too high.
+                        // 联通的条件：1.最小间距大于人 2.下表面高度差小于攀爬高度
 						if ((top - bot) >= walkableHeight && rcAbs((int)neighborSpan.y - (int)span.y) <= walkableClimb)
 						{
 							// Mark direction as walkable.
@@ -529,6 +536,7 @@ bool rcBuildCompactHeightfield(rcContext* context, const int walkableHeight, con
 								maxLayerIndex = rcMax(maxLayerIndex, layerIndex);
 								continue;
 							}
+                            // 设置为联通
 							rcSetCon(span, dir, layerIndex);
 							break;
 						}
