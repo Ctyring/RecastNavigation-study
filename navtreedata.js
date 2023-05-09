@@ -25,56 +25,64 @@
 var NAVTREE =
 [
   [ "Recast Navigation", "index.html", [
-    [ "RecastNavigation学习和注释", "index.html", null ],
+    [ "RecastNavigation学习和注释", "index.html", [
+      [ "SoloMesh方案", "index.html#autotoc_md1", [
+        [ "第一步 初始化配置", "index.html#autotoc_md2", null ],
+        [ "第二步 光栅化输入的多边形", "index.html#autotoc_md3", null ],
+        [ "第三步 过滤可行走表面", "index.html#autotoc_md4", null ],
+        [ "第四步 区域划分", "index.html#autotoc_md5", null ],
+        [ "轮廓化", "index.html#autotoc_md6", null ]
+      ] ]
+    ] ],
     [ "Contributing to Recast and Detour", "md_CONTRIBUTING.html", [
-      [ "Code of Conduct", "md_CONTRIBUTING.html#autotoc_md2", null ],
-      [ "Got a Question or Problem?", "md_CONTRIBUTING.html#autotoc_md3", null ],
-      [ "Have a question?", "md_CONTRIBUTING.html#autotoc_md4", null ],
-      [ "Found an Issue?", "md_CONTRIBUTING.html#autotoc_md5", null ],
-      [ "Want a Feature?", "md_CONTRIBUTING.html#autotoc_md6", null ],
-      [ "Submission Guidelines", "md_CONTRIBUTING.html#autotoc_md7", [
-        [ "Submitting an Issue", "md_CONTRIBUTING.html#autotoc_md8", null ],
-        [ "Submitting a Pull Request", "md_CONTRIBUTING.html#autotoc_md9", [
-          [ "After your pull request is merged", "md_CONTRIBUTING.html#autotoc_md10", null ]
+      [ "Code of Conduct", "md_CONTRIBUTING.html#autotoc_md8", null ],
+      [ "Got a Question or Problem?", "md_CONTRIBUTING.html#autotoc_md9", null ],
+      [ "Have a question?", "md_CONTRIBUTING.html#autotoc_md10", null ],
+      [ "Found an Issue?", "md_CONTRIBUTING.html#autotoc_md11", null ],
+      [ "Want a Feature?", "md_CONTRIBUTING.html#autotoc_md12", null ],
+      [ "Submission Guidelines", "md_CONTRIBUTING.html#autotoc_md13", [
+        [ "Submitting an Issue", "md_CONTRIBUTING.html#autotoc_md14", null ],
+        [ "Submitting a Pull Request", "md_CONTRIBUTING.html#autotoc_md15", [
+          [ "After your pull request is merged", "md_CONTRIBUTING.html#autotoc_md16", null ]
         ] ]
       ] ],
-      [ "Git Commit Guidelines", "md_CONTRIBUTING.html#autotoc_md11", [
-        [ "Commit content", "md_CONTRIBUTING.html#autotoc_md12", null ],
-        [ "Commit Message Format", "md_CONTRIBUTING.html#autotoc_md13", null ]
+      [ "Git Commit Guidelines", "md_CONTRIBUTING.html#autotoc_md17", [
+        [ "Commit content", "md_CONTRIBUTING.html#autotoc_md18", null ],
+        [ "Commit Message Format", "md_CONTRIBUTING.html#autotoc_md19", null ]
       ] ]
     ] ],
     [ "Contributor Covenant Code of Conduct", "md_CODE_OF_CONDUCT.html", [
-      [ "Our Pledge", "md_CODE_OF_CONDUCT.html#autotoc_md15", null ],
-      [ "Our Standards", "md_CODE_OF_CONDUCT.html#autotoc_md16", null ],
-      [ "Enforcement Responsibilities", "md_CODE_OF_CONDUCT.html#autotoc_md17", null ],
-      [ "Scope", "md_CODE_OF_CONDUCT.html#autotoc_md18", null ],
-      [ "Enforcement", "md_CODE_OF_CONDUCT.html#autotoc_md19", null ],
-      [ "Enforcement Guidelines", "md_CODE_OF_CONDUCT.html#autotoc_md20", [
-        [ "1. Correction", "md_CODE_OF_CONDUCT.html#autotoc_md21", null ],
-        [ "2. Warning", "md_CODE_OF_CONDUCT.html#autotoc_md22", null ],
-        [ "3. Temporary Ban", "md_CODE_OF_CONDUCT.html#autotoc_md23", null ],
-        [ "4. Permanent Ban", "md_CODE_OF_CONDUCT.html#autotoc_md24", null ]
+      [ "Our Pledge", "md_CODE_OF_CONDUCT.html#autotoc_md21", null ],
+      [ "Our Standards", "md_CODE_OF_CONDUCT.html#autotoc_md22", null ],
+      [ "Enforcement Responsibilities", "md_CODE_OF_CONDUCT.html#autotoc_md23", null ],
+      [ "Scope", "md_CODE_OF_CONDUCT.html#autotoc_md24", null ],
+      [ "Enforcement", "md_CODE_OF_CONDUCT.html#autotoc_md25", null ],
+      [ "Enforcement Guidelines", "md_CODE_OF_CONDUCT.html#autotoc_md26", [
+        [ "1. Correction", "md_CODE_OF_CONDUCT.html#autotoc_md27", null ],
+        [ "2. Warning", "md_CODE_OF_CONDUCT.html#autotoc_md28", null ],
+        [ "3. Temporary Ban", "md_CODE_OF_CONDUCT.html#autotoc_md29", null ],
+        [ "4. Permanent Ban", "md_CODE_OF_CONDUCT.html#autotoc_md30", null ]
       ] ],
-      [ "Attribution", "md_CODE_OF_CONDUCT.html#autotoc_md25", null ]
+      [ "Attribution", "md_CODE_OF_CONDUCT.html#autotoc_md31", null ]
     ] ],
     [ "Recast Development Roadmap", "md_Roadmap.html", [
-      [ "Short Term", "md_Roadmap.html#autotoc_md27", [
-        [ "Documentation & Web Presence", "md_Roadmap.html#autotoc_md28", null ],
-        [ "More explicit variable names", "md_Roadmap.html#autotoc_md29", null ],
-        [ "Opt-in config value validation system", "md_Roadmap.html#autotoc_md30", null ]
+      [ "Short Term", "md_Roadmap.html#autotoc_md33", [
+        [ "Documentation & Web Presence", "md_Roadmap.html#autotoc_md34", null ],
+        [ "More explicit variable names", "md_Roadmap.html#autotoc_md35", null ],
+        [ "Opt-in config value validation system", "md_Roadmap.html#autotoc_md36", null ]
       ] ],
-      [ "Medium Term", "md_Roadmap.html#autotoc_md31", [
-        [ "STB-Style Single-Header Release Packaging", "md_Roadmap.html#autotoc_md32", null ],
-        [ "Ensure there's a good threading story", "md_Roadmap.html#autotoc_md33", null ],
-        [ "More Tests", "md_Roadmap.html#autotoc_md34", null ],
-        [ "More POD structs for clarity in internals", "md_Roadmap.html#autotoc_md35", null ],
-        [ "Revisit structural organization", "md_Roadmap.html#autotoc_md36", null ]
+      [ "Medium Term", "md_Roadmap.html#autotoc_md37", [
+        [ "STB-Style Single-Header Release Packaging", "md_Roadmap.html#autotoc_md38", null ],
+        [ "Ensure there's a good threading story", "md_Roadmap.html#autotoc_md39", null ],
+        [ "More Tests", "md_Roadmap.html#autotoc_md40", null ],
+        [ "More POD structs for clarity in internals", "md_Roadmap.html#autotoc_md41", null ],
+        [ "Revisit structural organization", "md_Roadmap.html#autotoc_md42", null ]
       ] ],
-      [ "Longer-Term", "md_Roadmap.html#autotoc_md37", [
-        [ "Higher-Level APIs", "md_Roadmap.html#autotoc_md38", null ],
-        [ "C API", "md_Roadmap.html#autotoc_md39", null ]
+      [ "Longer-Term", "md_Roadmap.html#autotoc_md43", [
+        [ "Higher-Level APIs", "md_Roadmap.html#autotoc_md44", null ],
+        [ "C API", "md_Roadmap.html#autotoc_md45", null ]
       ] ],
-      [ "Roadmap for New Recast/Detour Functionality", "md_Roadmap.html#autotoc_md40", null ]
+      [ "Roadmap for New Recast/Detour Functionality", "md_Roadmap.html#autotoc_md46", null ]
     ] ],
     [ "Modules", "modules.html", "modules" ],
     [ "Classes", "annotated.html", [
@@ -118,9 +126,9 @@ var NAVTREEINDEX =
 "functions_d.html",
 "group__recast.html#ga6ef022fcf6dabdb0437b979304c0defe",
 "md_Roadmap.html#autotoc_md34",
-"structdtCrowdAgentParams.html#a7066a4477bbfa53fc1c983e17aa3e5ae",
-"structdtTileCacheParams.html#a366560e2dd03f2d8a2ceaf9b08cc7578",
-"structrcRegion.html#afacd1efddbdfbb854e7c2cf505365f0b"
+"structdtCrowdAgentParams.html",
+"structdtTileCacheObstacle.html#afb12e99f5680d18d4d61b8ad40c4a654",
+"structrcRegion.html#a59b8c8837159f85c1b8f7818976d26ae"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
