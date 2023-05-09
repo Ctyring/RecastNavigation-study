@@ -334,23 +334,26 @@ static bool diagonalLoose(int i, int j, int n, const int* verts, int* indices)
 	return inConeLoose(i, j, n, verts, indices) && diagonalieLoose(i, j, n, verts, indices);
 }
 
-
+// 三角剖分
 static int triangulate(int n, const int* verts, int* indices, int* tris)
 {
 	int ntris = 0;
 	int* dst = tris;
 	
 	// The last bit of the index is used to indicate if the vertex can be removed.
+	// 索引的最后一位用于指示是否可以删除顶点
 	for (int i = 0; i < n; i++)
 	{
 		int i1 = next(i, n);
 		int i2 = next(i1, n);
+		// 耳朵的判断条件：1.耳朵尖是锥形，即凸点2.两个耳根的连线不与任何轮廓边相交
 		if (diagonal(i, i2, n, verts, indices))
 			indices[i1] |= 0x80000000;
 	}
 	
 	while (n > 3)
 	{
+		// 找到最小的耳朵：两个耳朵根距离最短的耳朵
 		int minLen = -1;
 		int mini = -1;
 		for (int i = 0; i < n; i++)
@@ -383,6 +386,8 @@ static int triangulate(int n, const int* verts, int* indices, int* tris)
 			//  :   :     :     :
 			// We'll try to recover by loosing up the inCone test a bit so that a diagonal
 			// like A-B or C-D can be found and we can continue.
+			// 没找到耳朵的可能情况是出现重叠
+			// 尝试放宽inCone测试，以便可以找到对角线
 			minLen = -1;
 			mini = -1;
 			for (int i = 0; i < n; i++)
@@ -408,6 +413,7 @@ static int triangulate(int n, const int* verts, int* indices, int* tris)
 			{
 				// The contour is messed up. This sometimes happens
 				// if the contour simplification is too aggressive.
+				// 如果还是没有耳朵，这种情况通常是由于轮廓简化太过激进导致的
 				return -ntris;
 			}
 		}
@@ -422,6 +428,7 @@ static int triangulate(int n, const int* verts, int* indices, int* tris)
 		ntris++;
 		
 		// Removes P[i1] by copying P[i+1]...P[n-1] left one index.
+		// 删除耳朵的尖部
 		n--;
 		for (int k = i1; k < n; k++)
 			indices[k] = indices[k+1];
@@ -429,6 +436,7 @@ static int triangulate(int n, const int* verts, int* indices, int* tris)
 		if (i1 >= n) i1 = 0;
 		i = prev(i1,n);
 		// Update diagonal flags.
+		// 更新，看有没有新的耳朵出现
 		if (diagonal(prev(i, n), i1, n, verts, indices))
 			indices[i] |= 0x80000000;
 		else
@@ -441,6 +449,7 @@ static int triangulate(int n, const int* verts, int* indices, int* tris)
 	}
 	
 	// Append the remaining triangle.
+	// 添加最后剩余的三角形
 	*dst++ = indices[0] & 0x0fffffff;
 	*dst++ = indices[1] & 0x0fffffff;
 	*dst++ = indices[2] & 0x0fffffff;
@@ -565,7 +574,9 @@ static bool canRemoveVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned sho
 	const int nvp = mesh.nvp;
 	
 	// Count number of polygons to remove.
+	// 记录rem点被多少个多边形使用
 	int numTouchedVerts = 0;
+	// 记录剩余的边数
 	int numRemainingEdges = 0;
 	for (int i = 0; i < mesh.npolys; ++i)
 	{
@@ -611,6 +622,7 @@ static bool canRemoveVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned sho
 		const int nv = countPolyVerts(p, nvp);
 
 		// Collect edges which touches the removed vertex.
+		// 记录与rem点相连的边
 		for (int j = 0, k = nv-1; j < nv; k = j++)
 		{
 			if (p[j] == rem || p[k] == rem)
@@ -648,6 +660,7 @@ static bool canRemoveVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned sho
 	// There should be no more than 2 open edges.
 	// This catches the case that two non-adjacent polygons
 	// share the removed vertex. In that case, do not remove the vertex.
+	// 只有当边不被复用时，才能考虑删除
 	int numOpenEdges = 0;
 	for (int i = 0; i < nedges; ++i)
 	{
@@ -719,6 +732,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 		if (hasRem)
 		{
 			// Collect edges which does not touch the removed vertex.
+			// 记录与rem点不相连的边
 			for (int j = 0, k = nv-1; j < nv; k = j++)
 			{
 				if (p[j] != rem && p[k] != rem)
@@ -732,6 +746,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 				}
 			}
 			// Remove the polygon.
+			// 从mesh中删除多边形
 			unsigned short* p2 = &mesh.polys[(mesh.npolys-1)*nvp*2];
 			if (p != p2)
 				memcpy(p,p2,sizeof(unsigned short)*nvp);
@@ -744,6 +759,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	}
 	
 	// Remove vertex.
+	// 从mesh中删除顶点
 	for (int i = (int)rem; i < mesh.nverts - 1; ++i)
 	{
 		mesh.verts[i*3+0] = mesh.verts[(i+1)*3+0];
@@ -1108,7 +1124,8 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 		// Triangulate contour
 		for (int j = 0; j < cont.nverts; ++j)
 			indices[j] = j;
-			
+
+		// 耳裁法进行三角剖分
 		int ntris = triangulate(cont.nverts, cont.verts, &indices[0], &tris[0]);
 		if (ntris <= 0)
 		{
@@ -1126,21 +1143,27 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 			ctx->log(RC_LOG_WARNING, "rcBuildPolyMesh: Bad triangulation Contour %d.", i);
 			ntris = -ntris;
 		}
-				
+
 		// Add and merge vertices.
+		// 添加并合并顶点
 		for (int j = 0; j < cont.nverts; ++j)
 		{
 			const int* v = &cont.verts[j*4];
+			// 把轮廓点加入到mesh.verts中，过滤掉了垂直高度差在2以内的点
+			// indices里保存mesh.verts里点的索引
+			// j为轮廓点索引，[j]里的内容指向真正的轮廓点的索引,例如0, 1, 2, 3, 4索引 指向的内容为[0, 1, 1, 3, 4]，2索引的点过滤掉了
 			indices[j] = addVertex((unsigned short)v[0], (unsigned short)v[1], (unsigned short)v[2],
 								   mesh.verts, firstVert, nextVert, mesh.nverts);
 			if (v[3] & RC_BORDER_VERTEX)
 			{
 				// This vertex should be removed.
+				// 这个顶点应该被移除
 				vflags[indices[j]] = 1;
 			}
 		}
 
 		// Build initial polygons.
+		// 构建初始多边形
 		int npolys = 0;
 		memset(polys, 0xff, maxVertsPerCont*nvp*sizeof(unsigned short));
 		for (int j = 0; j < ntris; ++j)
@@ -1158,11 +1181,13 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 			continue;
 		
 		// Merge polygons.
+		// 合并多边形
 		if (nvp > 3)
 		{
 			for(;;)
 			{
 				// Find best polygons to merge.
+				// 找到优先级最高的多边形进行合并
 				int bestMergeVal = 0;
 				int bestPa = 0, bestPb = 0, bestEa = 0, bestEb = 0;
 				
@@ -1173,6 +1198,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 					{
 						unsigned short* pk = &polys[k*nvp];
 						int ea, eb;
+						// 优先选择共边最长的两个凸多边形，并且确保两共点在合并后仍然能维持凸点，这样的多边形合并才是合法的
 						int v = getPolyMergeValue(pj, pk, mesh.verts, ea, eb, nvp);
 						if (v > bestMergeVal)
 						{
@@ -1190,6 +1216,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 					// Found best, merge.
 					unsigned short* pa = &polys[bestPa*nvp];
 					unsigned short* pb = &polys[bestPb*nvp];
+					// 合并
 					mergePolyVerts(pa, pb, bestEa, bestEb, tmpPoly, nvp);
 					unsigned short* lastPoly = &polys[(npolys-1)*nvp];
 					if (pb != lastPoly)
@@ -1205,6 +1232,10 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 		}
 		
 		// Store polygons.
+		// 存储多边形信息到mesh.ploys中
+		// 每个poly用长度为2*maxVertsPerPoly的short表示，[0, maxVertsPerPoly)表示多边形的顶点索引，
+		// [maxVertsPerPoly, 2*maxVertsPerPoly)表示顶点邻接的多边形索引，
+		// 为什么用顶点邻接多边形，其实这个顶点代表了该顶点与下一个顶点形成的边，也就是边邻接的多边形索引。
 		for (int j = 0; j < npolys; ++j)
 		{
 			unsigned short* p = &mesh.polys[mesh.npolys*nvp*2];
@@ -1224,6 +1255,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 	
 	
 	// Remove edge vertices.
+	// 删除边界顶点
 	for (int i = 0; i < mesh.nverts; ++i)
 	{
 		if (vflags[i])
@@ -1246,6 +1278,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 	}
 	
 	// Calculate adjacency.
+	// 构建边信息
 	if (!buildMeshAdjacency(mesh.polys, mesh.npolys, mesh.nverts, nvp))
 	{
 		ctx->log(RC_LOG_ERROR, "rcBuildPolyMesh: Adjacency failed.");

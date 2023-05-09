@@ -91,6 +91,7 @@ void rcFilterLedgeSpans(rcContext* context, const int walkableHeight, const int 
                 // 下面两种情况时，会认为当前span为不可行走,下面的遍历检查了以下两种情况
                 // a：当nspan比span低walkableClimb以上时，说明span走向nspan时有落差，则span置位RC_NULL_AREA
                 // b：当span的所有nspan之间的高度差相差walkableClimb以上时，则认为比较陡峭，span置位RC_NULL_AREA
+                // 注意，这里的邻居必须是可达邻居(高度差大于walkableHeight)
 
 				// Find neighbours minimum height.
                 // 寻找邻居的最小高度 判断条件a

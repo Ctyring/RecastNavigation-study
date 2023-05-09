@@ -323,7 +323,7 @@ static bool floodRegion(int x, int y, int i,
 				}				
 			}
 		}
-        // 如果和其他region接壤，自己的region置零
+        // 如果和其他region接壤，自己的region置零(已经到达本region的边界了)
 		if (ar != 0)
 		{
 			srcReg[ci] = 0;
@@ -816,6 +816,14 @@ static void walkContour(int x, int y, int i, int dir,
 	}
 }
 
+//void debug_test(rcContext* ctx, rcIntArray overlaps, rcTempVector<rcRegion> regions){
+//    for(int i = 0; i < regions.size(); i++){
+//        if(regions[i].overlap){
+//            overlaps.push(i);
+//        }
+//    }
+//    ctx->log(RC_LOG_PROGRESS,"overlaps size: %d", overlaps.size());
+//}
 
 static bool mergeAndFilterRegions(rcContext* ctx, int minRegionArea, int mergeRegionSize,
 								  unsigned short& maxRegionId,
@@ -957,7 +965,7 @@ static bool mergeAndFilterRegions(rcContext* ctx, int minRegionArea, int mergeRe
 		// Do not remove areas which connect to tile borders
 		// as their size cannot be estimated correctly and removing them
 		// can potentially remove necessary areas.
-        // 如果联通的regions的span之和仍然小于minRegionArea，且不是边缘，移除该region
+        // 如果联通的regions的span之和仍然小于minRegionArea，且不是边缘，移除全部访问到的region
 		if (spanCount < minRegionArea && !connectsToBorder)
 		{
 			// Kill all visited regions.
@@ -968,7 +976,7 @@ static bool mergeAndFilterRegions(rcContext* ctx, int minRegionArea, int mergeRe
 			}
 		}
 	}
-	
+
 	// Merge too small regions to neighbour regions.
     // 将过小的regions合并到邻居
 	int mergeCount = 0 ;
@@ -1043,7 +1051,7 @@ static bool mergeAndFilterRegions(rcContext* ctx, int minRegionArea, int mergeRe
 		}
 	}
 	while (mergeCount > 0);
-	
+
 	// Compress region Ids.
     // 压缩region的id
 	for (int i = 0; i < nreg; ++i)
@@ -1637,7 +1645,7 @@ bool rcBuildRegions(rcContext* ctx, rcCompactHeightfield& chf,
 		const int bh = rcMin(h, borderSize);
 		
 		// Paint regions
-        // 画边界
+        // 画边界，给所有的边界加上RC_BORDER_REG
 		paintRectRegion(0, bw, 0, h, regionId|RC_BORDER_REG, chf, srcReg); regionId++;
 		paintRectRegion(w-bw, w, 0, h, regionId|RC_BORDER_REG, chf, srcReg); regionId++;
 		paintRectRegion(0, w, 0, bh, regionId|RC_BORDER_REG, chf, srcReg); regionId++;
@@ -1660,7 +1668,7 @@ bool rcBuildRegions(rcContext* ctx, rcCompactHeightfield& chf,
             // 分批次，批次0为已经处理过的档位，其他按照具体的level分档位
 			sortCellsByLevel(level, chf, srcReg, NB_STACKS, lvlStacks, 1);
 		else
-            // 把lvlStacks[sId-1]的数据压入lvlStacks[sId]
+            // 把lvlStacks[sId-1]的数据压入lvlStacks[sId](上阶段没能蔓延到的部分，即水源)
 			appendStacks(lvlStacks[sId-1], lvlStacks[sId], srcReg); // copy left overs from last level
 
 //		ctx->stopTimer(RC_TIMER_DIVIDE_TO_LEVELS);
@@ -1719,7 +1727,7 @@ bool rcBuildRegions(rcContext* ctx, rcCompactHeightfield& chf,
 			return false;
 
 		// If overlapping regions were found during merging, split those regions.
-        // 如果有重叠的region，分割region，所以在合并和就不存在重叠的region
+        // 如果有重叠的region，分割region，所以在合并后就不存在重叠的region
 		if (overlaps.size() > 0)
 		{
 			ctx->log(RC_LOG_ERROR, "rcBuildRegions: %d overlapping regions.", overlaps.size());
