@@ -52,7 +52,8 @@ static bool buildMeshAdjacency(unsigned short* polys, const int npolys,
 	
 	for (int i = 0; i < nverts; i++)
 		firstEdge[i] = RC_MESH_NULL_IDX;
-	
+
+    // 初始化边信息，确保v0 < v1
 	for (int i = 0; i < npolys; ++i)
 	{
 		unsigned short* t = &polys[i*vertsPerPoly*2];
@@ -77,7 +78,8 @@ static bool buildMeshAdjacency(unsigned short* polys, const int npolys,
 			}
 		}
 	}
-	
+
+    // 再次遍历，挑选出v0 > v1 (逆向的边)
 	for (int i = 0; i < npolys; ++i)
 	{
 		unsigned short* t = &polys[i*vertsPerPoly*2];
@@ -91,6 +93,7 @@ static bool buildMeshAdjacency(unsigned short* polys, const int npolys,
 				for (unsigned short e = firstEdge[v1]; e != RC_MESH_NULL_IDX; e = nextEdge[e])
 				{
 					rcEdge& edge = edges[e];
+                    // 如果双向的边都存在，说明两个多边形邻接，构建邻接关系
 					if (edge.vert[1] == v0 && edge.poly[0] == edge.poly[1])
 					{
 						edge.poly[1] = (unsigned short)i;
@@ -110,6 +113,7 @@ static bool buildMeshAdjacency(unsigned short* polys, const int npolys,
 		{
 			unsigned short* p0 = &polys[e.poly[0]*vertsPerPoly*2];
 			unsigned short* p1 = &polys[e.poly[1]*vertsPerPoly*2];
+            // 之前预留的空间用于存储邻接的点
 			p0[vertsPerPoly + e.polyEdge[0]] = e.poly[1];
 			p1[vertsPerPoly + e.polyEdge[1]] = e.poly[0];
 		}
@@ -133,9 +137,11 @@ inline int computeVertexHash(int x, int y, int z)
 	return (int)(n & (VERTEX_BUCKET_COUNT-1));
 }
 
+// 添加顶点到verts
 static unsigned short addVertex(unsigned short x, unsigned short y, unsigned short z,
 								unsigned short* verts, int* firstVert, int* nextVert, int& nv)
 {
+    // 哈希
 	int bucket = computeVertexHash(x, 0, z);
 	int i = firstVert[bucket];
 	
@@ -660,7 +666,7 @@ static bool canRemoveVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned sho
 	// There should be no more than 2 open edges.
 	// This catches the case that two non-adjacent polygons
 	// share the removed vertex. In that case, do not remove the vertex.
-	// 只有当边不被复用时，才能考虑删除
+	// 如果顶点有超过两条边是没有被复用的，那么是不能删除的。
 	int numOpenEdges = 0;
 	for (int i = 0; i < nedges; ++i)
 	{
@@ -769,13 +775,15 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	mesh.nverts--;
 
 	// Adjust indices to match the removed vertex layout.
-	for (int i = 0; i < mesh.npolys; ++i)
+	// 调整id以匹配顶点被删除后的布局
+    for (int i = 0; i < mesh.npolys; ++i)
 	{
 		unsigned short* p = &mesh.polys[i*nvp*2];
 		const int nv = countPolyVerts(p, nvp);
 		for (int j = 0; j < nv; ++j)
 			if (p[j] > rem) p[j]--;
 	}
+    // 调整边使得联通
 	for (int i = 0; i < nedges; ++i)
 	{
 		if (edges[i*4+0] > rem) edges[i*4+0]--;
@@ -787,6 +795,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 
 	// Start with one vertex, keep appending connected
 	// segments to the start and end of the hole.
+    // 加入第一个点
 	pushBack(edges[0], hole, nhole);
 	pushBack(edges[2], hreg, nhreg);
 	pushBack(edges[3], harea, nharea);
@@ -794,7 +803,8 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	while (nedges)
 	{
 		bool match = false;
-		
+
+        // 不断在两侧加入点，直到所有边都被加入
 		for (int i = 0; i < nedges; ++i)
 		{
 			const int ea = edges[i*4+0];
@@ -856,7 +866,10 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 		return false;
 	}
 
+    // 因为图形发生变化，不能保证凸多边形，所以需要重新走一下三角剖分->凸边形化的流程
+
 	// Generate temp vertex array for triangulation.
+    // 构建三角形数组
 	for (int i = 0; i < nhole; ++i)
 	{
 		const int pi = hole[i];
@@ -868,6 +881,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	}
 
 	// Triangulate the hole.
+    // 三角剖分
 	int ntris = triangulate(nhole, &tverts[0], &thole[0], tris);
 	if (ntris < 0)
 	{
@@ -898,6 +912,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	unsigned short* tmpPoly = &polys[ntris*nvp];
 			
 	// Build initial polygons.
+    // 初始化多边形(一堆三角形)
 	int npolys = 0;
 	memset(polys, 0xff, ntris*nvp*sizeof(unsigned short));
 	for (int j = 0; j < ntris; ++j)
@@ -911,6 +926,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 
 			// If this polygon covers multiple region types then
 			// mark it as such
+            // 如果一个region有多个region类型，进行标记
 			if (hreg[t[0]] != hreg[t[1]] || hreg[t[1]] != hreg[t[2]])
 				pregs[npolys] = RC_MULTIPLE_REGS;
 			else
@@ -924,6 +940,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 		return true;
 	
 	// Merge polygons.
+    // 合并
 	if (nvp > 3)
 	{
 		for (;;)
@@ -958,6 +975,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 				unsigned short* pb = &polys[bestPb*nvp];
 				mergePolyVerts(pa, pb, bestEa, bestEb, tmpPoly, nvp);
 				if (pregs[bestPa] != pregs[bestPb])
+                    // 如果合并的时候，两个region不一样，标记为多个region
 					pregs[bestPa] = RC_MULTIPLE_REGS;
 
 				unsigned short* last = &polys[(npolys-1)*nvp];
@@ -976,6 +994,7 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 	}
 	
 	// Store polygons.
+    // 加入删除顶点后的新多边形
 	for (int i = 0; i < npolys; ++i)
 	{
 		if (mesh.npolys >= maxTris) break;
@@ -1152,12 +1171,13 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 			// 把轮廓点加入到mesh.verts中，过滤掉了垂直高度差在2以内的点
 			// indices里保存mesh.verts里点的索引
 			// j为轮廓点索引，[j]里的内容指向真正的轮廓点的索引,例如0, 1, 2, 3, 4索引 指向的内容为[0, 1, 1, 3, 4]，2索引的点过滤掉了
+            // verts中的按顺序保存了每个顶点的x,y,z firstVert中保存了起始点的索引，nextVert中保存了在y轴上下一个点的索引(类似前面的高度场、紧锁高度场的数据结构)
 			indices[j] = addVertex((unsigned short)v[0], (unsigned short)v[1], (unsigned short)v[2],
 								   mesh.verts, firstVert, nextVert, mesh.nverts);
 			if (v[3] & RC_BORDER_VERTEX)
 			{
 				// This vertex should be removed.
-				// 这个顶点应该被移除
+				// 边缘突起的顶点应该被移除
 				vflags[indices[j]] = 1;
 			}
 		}
@@ -1278,7 +1298,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 	}
 	
 	// Calculate adjacency.
-	// 构建边信息
+	// 构建边的邻接信息
 	if (!buildMeshAdjacency(mesh.polys, mesh.npolys, mesh.nverts, nvp))
 	{
 		ctx->log(RC_LOG_ERROR, "rcBuildPolyMesh: Adjacency failed.");
@@ -1286,6 +1306,7 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 	}
 	
 	// Find portal edges
+    // 找到边界的门
 	if (mesh.borderSize > 0)
 	{
 		const int w = cset.width;
@@ -1293,24 +1314,33 @@ bool rcBuildPolyMesh(rcContext* ctx, const rcContourSet& cset, const int nvp, rc
 		for (int i = 0; i < mesh.npolys; ++i)
 		{
 			unsigned short* p = &mesh.polys[i*2*nvp];
-			for (int j = 0; j < nvp; ++j)
+			// 遍历多边形的每个顶点
+            for (int j = 0; j < nvp; ++j)
 			{
+                // 遍历结束
 				if (p[j] == RC_MESH_NULL_IDX) break;
 				// Skip connected edges.
+                // 跳过和其他多边形邻接的点
 				if (p[nvp+j] != RC_MESH_NULL_IDX)
 					continue;
+                // 剩下的顶点既然不和其他多边形邻接，就是边界上的点
 				int nj = j+1;
+                // 找到j的相邻点nj
 				if (nj >= nvp || p[nj] == RC_MESH_NULL_IDX) nj = 0;
 				const unsigned short* va = &mesh.verts[p[j]*3];
 				const unsigned short* vb = &mesh.verts[p[nj]*3];
 
+                // 左侧门
 				if ((int)va[0] == 0 && (int)vb[0] == 0)
 					p[nvp+j] = 0x8000 | 0;
-				else if ((int)va[2] == h && (int)vb[2] == h)
+				// 上侧门
+                else if ((int)va[2] == h && (int)vb[2] == h)
 					p[nvp+j] = 0x8000 | 1;
-				else if ((int)va[0] == w && (int)vb[0] == w)
+				// 右侧门
+                else if ((int)va[0] == w && (int)vb[0] == w)
 					p[nvp+j] = 0x8000 | 2;
-				else if ((int)va[2] == 0 && (int)vb[2] == 0)
+				// 下侧门
+                else if ((int)va[2] == 0 && (int)vb[2] == 0)
 					p[nvp+j] = 0x8000 | 3;
 			}
 		}

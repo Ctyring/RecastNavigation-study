@@ -25,7 +25,7 @@
 #include "RecastAssert.h"
 
 // 计算边缘的高度
-static int getCornerHeight(int x, int y, int i, int dir,
+static int  getCornerHeight(int x, int y, int i, int dir,
 						   const rcCompactHeightfield& chf,
 						   bool& isBorderVertex)
 {
@@ -43,7 +43,7 @@ static int getCornerHeight(int x, int y, int i, int dir,
     // 下面对高度的比较其实就是比较的四个点
     // A B
     // C D
-    // 比如我们在C，下面比较的就是 A 和 D ，如果联通的话还会取比较B，包括下面的顶点的计算，其实就是这四个点的关系
+    // 比如我们在C，下面比较的就是 A 和 D ，如果联通的话还会比较B，包括下面的顶点的计算，其实就是这四个点的关系
 
     // 可行走的边界(即邻居是其他region)
 	if (rcGetCon(s, dir) != RC_NOT_CONNECTED)
@@ -87,10 +87,10 @@ static int getCornerHeight(int x, int y, int i, int dir,
 	// 判断该span是否是顶点
     for (int j = 0; j < 4; ++j)
 	{
-		const int a = j;           // 0
-		const int b = (j+1) & 0x3; // 1
-		const int c = (j+2) & 0x3; // 2
-		const int d = (j+3) & 0x3; // 3
+		const int a = j;
+		const int b = (j+1) & 0x3;
+		const int c = (j+2) & 0x3;
+		const int d = (j+3) & 0x3;
 		
 		// The vertex is a border vertex there are two same exterior cells in a row,
 		// followed by two interior cells and none of the regions are out of bounds.

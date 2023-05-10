@@ -63,6 +63,7 @@ inline float vcross2(const float* p1, const float* p2, const float* p3)
 	return u1 * v2 - v1 * u2;
 }
 
+// 计算三角形的外接圆并返回圆心和半径
 static bool circumCircle(const float* p1, const float* p2, const float* p3,
 						 float* c, float& r)
 {
@@ -111,6 +112,7 @@ static float distPtTri(const float* p, const float* a, const float* b, const flo
 	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 	
 	// If point lies inside the triangle, return interpolated y-coord.
+    // 如果点在三角形内，返回插值的y坐标
 	static const float EPS = 1e-4f;
 	if (u >= -EPS && v >= -EPS && (u+v) <= 1+EPS)
 	{
@@ -330,15 +332,23 @@ static void updateLeftFace(int* e, int s, int t, int f)
 		e[3] = f;
 }
 
+// 判断重叠
 static int overlapSegSeg2d(const float* a, const float* b, const float* c, const float* d)
 {
-	const float a1 = vcross2(a, b, d);
-	const float a2 = vcross2(a, b, c);
+	// ab与db的叉积
+    const float a1 = vcross2(a, b, d);
+	// ab与cb的叉积
+    const float a2 = vcross2(a, b, c);
+    // 一正一负说明cd在b的两侧
 	if (a1*a2 < 0.0f)
 	{
+        // cd与ad的叉积
 		float a3 = vcross2(c, d, a);
-		float a4 = a3 + a2 - a1;
+		// cd与bd的叉积
+        float a4 = a3 + a2 - a1;
+        // 说明ab在d的两侧
 		if (a3 * a4 < 0.0f)
+            // 那就只能重叠了
 			return 1;
 	}
 	return 0;
@@ -384,9 +394,11 @@ static void completeFacet(rcContext* ctx, const float* pts, int npts, int* edges
 	}
     
 	// Find best point on left of edge.
+    // 找到左边的最佳点
 	int pt = npts;
 	float c[3] = {0,0,0};
 	float r = -1;
+    // 遍历所有点
 	for (int u = 0; u < npts; ++u)
 	{
 		if (u == s || u == t) continue;
@@ -396,16 +408,20 @@ static void completeFacet(rcContext* ctx, const float* pts, int npts, int* edges
 			{
 				// The circle is not updated yet, do it now.
 				pt = u;
+                // 计算三角形外接圆并返回圆心和半径
 				circumCircle(&pts[s*3], &pts[t*3], &pts[u*3], c, r);
 				continue;
 			}
+            // 计算点到圆心的距离
 			const float d = vdist2(c, &pts[u*3]);
 			const float tol = 0.001f;
+            // 在当前圆的外面，直接跳过
 			if (d > r*(1+tol))
 			{
 				// Outside current circumcircle, skip.
 				continue;
 			}
+            // 在里面，再次计算以缩小圆
 			else if (d < r*(1-tol))
 			{
 				// Inside safe circumcircle, update circle.
@@ -416,11 +432,13 @@ static void completeFacet(rcContext* ctx, const float* pts, int npts, int* edges
 			{
 				// Inside epsilon circum circle, do extra tests to make sure the edge is valid.
 				// s-u and t-u cannot overlap with s-pt nor t-pt if they exists.
+                // 判断是否和其他边重叠
 				if (overlapEdges(pts, edges, nedges, s,u))
 					continue;
 				if (overlapEdges(pts, edges, nedges, t,u))
 					continue;
 				// Edge is valid.
+                // 边是有效的
 				pt = u;
 				circumCircle(&pts[s*3], &pts[t*3], &pts[u*3], c, r);
 			}
@@ -428,12 +446,15 @@ static void completeFacet(rcContext* ctx, const float* pts, int npts, int* edges
 	}
 	
 	// Add new triangle or update edge info if s-t is on hull.
+    // 如果找到了最佳点，那么就添加新的三角形
 	if (pt < npts)
 	{
 		// Update face information of edge being completed.
+        // 更新边的面信息
 		updateLeftFace(&edges[e*4], s, t, nfaces);
 		
 		// Add new edge or update face info of old edge.
+        // 更新或添加新的边
 		e = findEdge(edges, nedges, pt, s);
 		if (e == EV_UNDEF)
 		    addEdge(ctx, edges, nedges, maxEdges, pt, s, nfaces, EV_UNDEF);
@@ -451,6 +472,7 @@ static void completeFacet(rcContext* ctx, const float* pts, int npts, int* edges
 	}
 	else
 	{
+        // 如果没有找到最佳点，那么就更新边的面信息为已经处理过
 		updateLeftFace(&edges[e*4], s, t, EV_HULL);
 	}
 }
@@ -463,10 +485,12 @@ static void delaunayHull(rcContext* ctx, const int npts, const float* pts,
 	int nedges = 0;
 	const int maxEdges = npts*10;
 	edges.resize(maxEdges*4);
-	
+
+    // 根据hull构建edge
 	for (int i = 0, j = nhull-1; i < nhull; j=i++)
 		addEdge(ctx, &edges[0], nedges, maxEdges, hull[j],hull[i], EV_HULL, EV_UNDEF);
-	
+
+    // 遍历每一个边
 	int currentEdge = 0;
 	while (currentEdge < nedges)
 	{
@@ -478,6 +502,8 @@ static void delaunayHull(rcContext* ctx, const int npts, const float* pts,
 	}
 	
 	// Create tris
+    // 创建三角形
+    // 四个参数：
 	tris.resize(nfaces*4);
 	for (int i = 0; i < nfaces*4; ++i)
 		tris[i] = -1;
@@ -488,6 +514,7 @@ static void delaunayHull(rcContext* ctx, const int npts, const float* pts,
 		if (e[3] >= 0)
 		{
 			// Left face
+            // ID为e[3]的三角形
 			int* t = &tris[e[3]*4];
 			if (t[0] == -1)
 			{
@@ -532,21 +559,25 @@ static void delaunayHull(rcContext* ctx, const int npts, const float* pts,
 }
 
 // Calculate minimum extend of the polygon.
+// 计算多边形的最小伸展
 static float polyMinExtent(const float* verts, const int nverts)
 {
 	float minDist = FLT_MAX;
-	for (int i = 0; i < nverts; i++)
+	// 遍历每对邻边
+    for (int i = 0; i < nverts; i++)
 	{
 		const int ni = (i+1) % nverts;
 		const float* p1 = &verts[i*3];
 		const float* p2 = &verts[ni*3];
-		float maxEdgeDist = 0;
+		// 找出其他点和这个邻边的最大距离
+        float maxEdgeDist = 0;
 		for (int j = 0; j < nverts; j++)
 		{
 			if (j == i || j == ni) continue;
 			float d = distancePtSeg2d(&verts[j*3], p1,p2);
 			maxEdgeDist = rcMax(maxEdgeDist, d);
 		}
+        // 最大距离的最小值就是最小伸展
 		minDist = rcMin(minDist, maxEdgeDist);
 	}
 	return rcSqrt(minDist);
@@ -562,6 +593,7 @@ static void triangulateHull(const int /*nverts*/, const float* verts, const int 
 	
 	// Start from an ear with shortest perimeter.
 	// This tends to favor well formed triangles as starting point.
+    // 选择三角形中周长最短的作为起始点
 	float dmin = FLT_MAX;
 	for (int i = 0; i < nhull; i++)
 	{
@@ -582,6 +614,7 @@ static void triangulateHull(const int /*nverts*/, const float* verts, const int 
 	}
 	
 	// Add first triangle
+    // 将三角形的顶点放入数组
 	tris.push(hull[start]);
 	tris.push(hull[left]);
 	tris.push(hull[right]);
@@ -591,6 +624,7 @@ static void triangulateHull(const int /*nverts*/, const float* verts, const int 
 	// depending on which triangle has shorter perimeter.
 	// This heuristic was chose emprically, since it seems
 	// handle tesselated straight edges well.
+    // 比较以两个耳根为耳尖的新的三角形，将周长较小的加入数组，继续重复。
 	while (next(left, nhull) != right)
 	{
 		// Check to see if se should advance left or right.
@@ -659,11 +693,14 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 	const float ics = 1.0f/cs;
 	
 	// Calculate minimum extents of the polygon based on input data.
+    // 计算多边形的最小伸展
+    // 最小伸展反映了多边形的方正度
 	float minExtent = polyMinExtent(verts, nverts);
 	
 	// Tessellate outlines.
 	// This is done in separate pass in order to ensure
 	// seamless height values across the ply boundaries.
+    // 把poly的每条边按照sampleDist进行采样
 	if (sampleDist > 0)
 	{
 		for (int i = 0, j = nin-1; i < nin; j=i++)
@@ -694,11 +731,13 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 			float dy = vi[1] - vj[1];
 			float dz = vi[2] - vj[2];
 			float d = sqrtf(dx*dx + dz*dz);
+            // 采样个数
 			int nn = 1 + (int)floorf(d/sampleDist);
 			if (nn >= MAX_VERTS_PER_EDGE) nn = MAX_VERTS_PER_EDGE-1;
 			if (nverts+nn >= MAX_VERTS)
 				nn = MAX_VERTS-1-nverts;
-			
+
+            // 平均分布采样点
 			for (int k = 0; k <= nn; ++k)
 			{
 				float u = (float)k/(float)nn;
@@ -708,8 +747,11 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				pos[2] = vj[2] + dz*u;
 				pos[1] = getHeight(pos[0],pos[1],pos[2], cs, ics, chf.ch, heightSearchRadius, hp)*chf.ch;
 			}
+
 			// Simplify samples.
-			int idx[MAX_VERTS_PER_EDGE] = {0,nn};
+			// 简化采样点
+            // 先把两边的点放进去
+            int idx[MAX_VERTS_PER_EDGE] = {0,nn};
 			int nidx = 2;
 			for (int k = 0; k < nidx-1; )
 			{
@@ -718,7 +760,8 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				const float* va = &edge[a*3];
 				const float* vb = &edge[b*3];
 				// Find maximum deviation along the segment.
-				float maxd = 0;
+				// 遍历找到距离当前简化点组成的边最远的点
+                float maxd = 0;
 				int maxi = -1;
 				for (int m = a+1; m < b; ++m)
 				{
@@ -731,7 +774,8 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				}
 				// If the max deviation is larger than accepted error,
 				// add new point, else continue to next segment.
-				if (maxi != -1 && maxd > rcSqr(sampleMaxError))
+				// 如果超过最大误差，把当前点也加入
+                if (maxi != -1 && maxd > rcSqr(sampleMaxError))
 				{
 					for (int m = nidx; m > k; --m)
 						idx[m] = idx[m-1];
@@ -740,12 +784,15 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				}
 				else
 				{
+                    // 否则合格，继续下一条边
 					++k;
 				}
 			}
-			
+
+            // j是这条边的起始索引
 			hull[nhull++] = j;
 			// Add new vertices.
+            // 遍历并把采样点加入hull
 			if (swapped)
 			{
 				for (int k = nidx-2; k > 0; --k)
@@ -768,6 +815,7 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 	}
 	
 	// If the polygon minimum extent is small (sliver or small triangle), do not try to add internal points.
+    // 如果poly的最小扩展比较小，即方正度比较低，进行下面的按面采样效果会不好，直接进行三角剖分并结束
 	if (minExtent < sampleDist*2)
 	{
 		triangulateHull(nverts, verts, nhull, hull, nin, tris);
@@ -778,6 +826,7 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 	// We're using the triangulateHull instead of delaunayHull as it tends to
 	// create a bit better triangulation for long thin triangles when there
 	// are no internal points.
+    // 三角剖分
 	triangulateHull(nverts, verts, nhull, hull, nin, tris);
 	
 	if (tris.size() == 0)
@@ -803,17 +852,20 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 		int z0 = (int)floorf(bmin[2]/sampleDist);
 		int z1 = (int)ceilf(bmax[2]/sampleDist);
 		samples.clear();
-		for (int z = z0; z < z1; ++z)
+		// 在poly的xz包围盒中按照sampleDist采样
+        for (int z = z0; z < z1; ++z)
 		{
 			for (int x = x0; x < x1; ++x)
 			{
 				float pt[3];
 				pt[0] = x*sampleDist;
+                // 高度先取平均数
 				pt[1] = (bmax[1]+bmin[1])*0.5f;
 				pt[2] = z*sampleDist;
 				// Make sure the samples are not too close to the edges.
 				if (distToPoly(nin,in,pt) > -sampleDist/2) continue;
 				samples.push(x);
+                // 计算精确高度
 				samples.push(getHeight(pt[0], pt[1], pt[2], cs, ics, chf.ch, heightSearchRadius, hp));
 				samples.push(z);
 				samples.push(0); // Not added
@@ -823,14 +875,16 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 		// Add the samples starting from the one that has the most
 		// error. The procedure stops when all samples are added
 		// or when the max error is within treshold.
+        // 采样点的个数（/4因为每个点四个元素x y z added(是否为插入点))
 		const int nsamples = samples.size()/4;
 		for (int iter = 0; iter < nsamples; ++iter)
 		{
 			if (nverts >= MAX_VERTS)
 				break;
-			
+
 			// Find sample with most error.
-			float bestpt[3] = {0,0,0};
+			// 找到误差最大的样本
+            float bestpt[3] = {0,0,0};
 			float bestd = 0;
 			int besti = -1;
 			for (int i = 0; i < nsamples; ++i)
@@ -840,9 +894,11 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				float pt[3];
 				// The sample location is jittered to get rid of some bad triangulations
 				// which are cause by symmetrical data from the grid structure.
+                // 加入一些抖动
 				pt[0] = s[0]*sampleDist + getJitterX(i)*cs*0.1f;
 				pt[1] = s[1]*chf.ch;
 				pt[2] = s[2]*sampleDist + getJitterY(i)*cs*0.1f;
+                // 计算采样点到三角形网格的距离
 				float d = distToTriMesh(pt, verts, nverts, &tris[0], tris.size()/4);
 				if (d < 0) continue; // did not hit the mesh.
 				if (d > bestd)
@@ -853,6 +909,7 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 				}
 			}
 			// If the max error is within accepted threshold, stop tesselating.
+            // 如果误差小于阈值，停止
 			if (bestd <= sampleMaxError || besti == -1)
 				break;
 			// Mark sample as added.
@@ -865,6 +922,7 @@ static bool buildPolyDetail(rcContext* ctx, const float* in, const int nin,
 			// TODO: Incremental add instead of full rebuild.
 			edges.clear();
 			tris.clear();
+            // 使用该采样点进行一次三角剖分
 			delaunayHull(ctx, nverts, verts, nhull, hull, tris, edges);
 		}
 	}
@@ -893,6 +951,7 @@ static void seedArrayWithPolyCenter(rcContext* ctx, const rcCompactHeightfield& 
 	};
 	
 	// Find cell closest to a poly vertex
+    // 找到最接近多边形一个顶点的单元格
 	int startCellX = 0, startCellY = 0, startSpanIndex = -1;
 	int dmin = RC_UNSET_HEIGHT;
 	for (int j = 0; j < npoly && dmin > 0; ++j)
@@ -924,6 +983,7 @@ static void seedArrayWithPolyCenter(rcContext* ctx, const rcCompactHeightfield& 
 	
 	rcAssert(startSpanIndex != -1);
 	// Find center of the polygon
+    // 找到多边形的中心
 	int pcx = 0, pcy = 0;
 	for (int j = 0; j < npoly; ++j)
 	{
@@ -946,6 +1006,7 @@ static void seedArrayWithPolyCenter(rcContext* ctx, const rcCompactHeightfield& 
 	// are convex. In very rare we can get stuck due to contour simplification if we do not
 	// record nodes.
 	int cx = -1, cy = -1, ci = -1;
+    // 使用dfs移动到中心并记录节点
 	while (true)
 	{
 		if (array.size() < 3)
@@ -1042,6 +1103,7 @@ static void getHeightData(rcContext* ctx, const rcCompactHeightfield& chf,
 	{
 		// Copy the height from the same region, and mark region borders
 		// as seed points to fill the rest.
+        // 遍历包围盒内所有点
 		for (int hy = 0; hy < hp.height; hy++)
 		{
 			int y = hp.ymin + hy + bs;
@@ -1052,14 +1114,17 @@ static void getHeightData(rcContext* ctx, const rcCompactHeightfield& chf,
 				for (int i = (int)c.index, ni = (int)(c.index + c.count); i < ni; ++i)
 				{
 					const rcCompactSpan& s = chf.spans[i];
+                    // 如果是同region，则设置高度
 					if (s.reg == region)
 					{
 						// Store height
+                        // 保存高度
 						hp.data[hx + hy*hp.width] = s.y;
 						empty = false;
 
 						// If any of the neighbours is not in same region,
 						// add the current location as flood fill start
+                        // 判断是否是边界
 						bool border = false;
 						for (int dir = 0; dir < 4; ++dir)
 						{
@@ -1076,6 +1141,7 @@ static void getHeightData(rcContext* ctx, const rcCompactHeightfield& chf,
 								}
 							}
 						}
+                        // 把边界push到queue
 						if (border)
 							push3(queue, x, y, i);
 						break;
@@ -1088,12 +1154,16 @@ static void getHeightData(rcContext* ctx, const rcCompactHeightfield& chf,
 	// if the polygon does not contain any points from the current region (rare, but happens)
 	// or if it could potentially be overlapping polygons of the same region,
 	// then use the center as the seed point.
+    // 如果没有找到同region的点，则使用多边形中心点作为种子点
+    // 这种情况包含两种子情况 1.该region就是没有包含任何点，是空的 2.该region包含的区域是多个region重复的
 	if (empty)
 		seedArrayWithPolyCenter(ctx, chf, poly, npoly, verts, bs, hp, queue);
 	
 	static const int RETRACT_SIZE = 256;
 	int head = 0;
-	
+
+    // 至此，在hp中拿到了高度信息，queue中拿到了用于开始遍历的点。
+
 	// We assume the seed is centered in the polygon, so a BFS to collect
 	// height data will ensure we do not move onto overlapping polygons and
 	// sample wrong heights.
@@ -1208,6 +1278,7 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 	}
 	
 	// Find max size for a polygon area.
+    // 计算多边形区域的最大尺寸
 	for (int i = 0; i < mesh.npolys; ++i)
 	{
 		const unsigned short* p = &mesh.polys[i*nvp*2];
@@ -1294,9 +1365,11 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 		hp.ymin = bounds[i*4+2];
 		hp.width = bounds[i*4+1]-bounds[i*4+0];
 		hp.height = bounds[i*4+3]-bounds[i*4+2];
+        // 从紧缩高度场中取出高度数据
 		getHeightData(ctx, chf, p, npoly, mesh.verts, borderSize, hp, arr, mesh.regs[i]);
 		
 		// Build detail mesh.
+        // 构建细节网络
 		int nverts = 0;
 		if (!buildPolyDetail(ctx, poly, npoly,
 							 sampleDist, sampleMaxError,
@@ -1308,6 +1381,7 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 		}
 		
 		// Move detail verts to world space.
+        // 将细节顶点移动到世界空间
 		for (int j = 0; j < nverts; ++j)
 		{
 			verts[j*3+0] += orig[0];
@@ -1315,6 +1389,7 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 			verts[j*3+2] += orig[2];
 		}
 		// Offset poly too, will be used to flag checking.
+        // 偏移多边形，将用于标记检查
 		for (int j = 0; j < npoly; ++j)
 		{
 			poly[j*3+0] += orig[0];
@@ -1323,6 +1398,7 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 		}
 		
 		// Store detail submesh.
+        // 保存多边形的顶点和三角，必要时扩容
 		const int ntris = tris.size()/4;
 		
 		dmesh.meshes[i*4+0] = (unsigned int)dmesh.nverts;

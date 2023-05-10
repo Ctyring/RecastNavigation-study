@@ -646,6 +646,7 @@ bool Sample_SoloMesh::handleBuild()
 	
 	//
 	// Step 7. Create detail mesh which allows to access approximate height on each polygon.
+    // 构建高度细节
 	//
 	
 	m_dmesh = rcAllocPolyMeshDetail();
