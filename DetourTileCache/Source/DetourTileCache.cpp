@@ -504,8 +504,10 @@ dtStatus dtTileCache::queryTiles(const float* bmin, const float* bmax,
 			{
 				const dtCompressedTile* tile = &m_tiles[decodeTileIdTile(tiles[i])];
 				float tbmin[3], tbmax[3];
+                // 计算tile的边界
 				calcTightTileBounds(tile->header, tbmin, tbmax);
-				
+
+                // 判断tile是否与查询区域相交
 				if (dtOverlapBounds(bmin,bmax, tbmin,tbmax))
 				{
 					if (n < maxResults)

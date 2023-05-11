@@ -266,6 +266,7 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 				regs[ri].ymax = rcMax(regs[ri].ymax, s.y);
 				
 				// Collect all region layers.
+                // 给y轴上的region分配layerID
 				if (nlregs < RC_MAX_LAYERS)
 					lregs[nlregs++] = ri;
 				
@@ -287,10 +288,10 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 						}
 					}
 				}
-				
 			}
 			
 			// Update overlapping regions.
+            // 将重叠的region互相标记
 			for (int i = 0; i < nlregs-1; ++i)
 			{
 				for (int j = i+1; j < nlregs; ++j)
@@ -319,7 +320,8 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 	static const int MAX_STACK = 64;
 	unsigned char stack[MAX_STACK];
 	int nstack = 0;
-	
+
+    // 在每一层设置layerID
 	for (int i = 0; i < nregs; ++i)
 	{
 		rcLayerRegion& root = regs[i];
@@ -351,9 +353,11 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 				if (regn.layerId != 0xff)
 					continue;
 				// Skip if the neighbour is overlapping root region.
+                // 重叠的不能设置为1个layerID
 				if (contains(root.layers, root.nlayers, nei))
 					continue;
 				// Skip if the height range would become too large.
+                // 避免一个layer中的高度差过大
 				const int ymin = rcMin(root.ymin, regn.ymin);
 				const int ymax = rcMax(root.ymax, regn.ymax);
 				if ((ymax - ymin) >= 255)
@@ -386,7 +390,8 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 	
 	// Merge non-overlapping regions that are close in height.
 	const unsigned short mergeHeight = (unsigned short)walkableHeight * 4;
-	
+
+    // 合并高度相近的region
 	for (int i = 0; i < nregs; ++i)
 	{
 		rcLayerRegion& ri = regs[i];
@@ -397,7 +402,8 @@ bool rcBuildHeightfieldLayers(rcContext* ctx, const rcCompactHeightfield& chf,
 		for (;;)
 		{
 			unsigned char oldId = 0xff;
-			
+
+            // 遍历找可以合并的region
 			for (int j = 0; j < nregs; ++j)
 			{
 				if (i == j) continue;

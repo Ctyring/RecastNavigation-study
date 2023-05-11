@@ -1369,7 +1369,7 @@ bool rcBuildPolyMeshDetail(rcContext* ctx, const rcPolyMesh& mesh, const rcCompa
 		getHeightData(ctx, chf, p, npoly, mesh.verts, borderSize, hp, arr, mesh.regs[i]);
 		
 		// Build detail mesh.
-        // 构建细节网络
+        // 构建细节网格
 		int nverts = 0;
 		if (!buildPolyDetail(ctx, poly, npoly,
 							 sampleDist, sampleMaxError,

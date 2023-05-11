@@ -956,6 +956,8 @@ static bool removeVertex(rcContext* ctx, rcPolyMesh& mesh, const unsigned short 
 				{
 					unsigned short* pk = &polys[k*nvp];
 					int ea, eb;
+                    // 优先选择共边最长的两个凸多边形，并且确保两共点在合并后仍然能维持凸点，这样的多边形合并才是合法的
+
 					int v = getPolyMergeValue(pj, pk, mesh.verts, ea, eb, nvp);
 					if (v > bestMergeVal)
 					{

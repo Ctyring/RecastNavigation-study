@@ -119,10 +119,10 @@ delaunay三角剖分的算法也有很多种，这里介绍一下源码中的处
 1. 首先根据采样点数组构建外围一圈的边数组，保存起点和终点，起点标识和终点标识。起点标识为`_EV_HULL_`_终点标识为_`_EV_UNDEF_`
 2. 然后遍历每个边，寻找合适的第三点，能够构成最小的内接圆。将构成该三角形的边加入数组，如果已经存在，更新左标识为faceID(当前三角形ID)
 
-大致这个意思，可以自己画一下。然后可以发现每个三角形编号都出现了三次，直接遍历边数组根据三角形编号把对应顶点放入即可。  
-![image.png](https://cdn.nlark.com/yuque/0/2023/png/21629258/1683727761734-88209f64-4cec-4552-a34c-6067aeebdaeb.png#averageHue=%23f9f8f7&clientId=u502f97a6-57e2-4&from=paste&height=680&id=ub87a3181&originHeight=680&originWidth=1008&originalType=binary&ratio=1&rotation=0&showTitle=false&size=12745&status=done&style=none&taskId=udc1c2e85-f195-4d9b-885b-b51b4070ee6&title=&width=1008)  
+大致这个意思，可以自己画一下。然后可以发现每个三角形编号都出现了三次，直接遍历边数组根据三角形编号把对应顶点放入即可。
+![image.png](https://cdn.nlark.com/yuque/0/2023/png/21629258/1683727761734-88209f64-4cec-4552-a34c-6067aeebdaeb.png#averageHue=%23f9f8f7&clientId=u502f97a6-57e2-4&from=paste&height=680&id=ub87a3181&originHeight=680&originWidth=1008&originalType=binary&ratio=1&rotation=0&showTitle=false&size=12745&status=done&style=none&taskId=udc1c2e85-f195-4d9b-885b-b51b4070ee6&title=&width=1008)
 最后，将三角剖分的结构修正为世界坐标，加载到网格中，就得到了高度细节网格。
-参考资料  
-[https://zhuanlan.zhihu.com/p/357242050](https://zhuanlan.zhihu.com/p/357242050)  
-[https://zhuanlan.zhihu.com/p/583887024](https://zhuanlan.zhihu.com/p/583887024)  
+参考资料
+[https://zhuanlan.zhihu.com/p/357242050](https://zhuanlan.zhihu.com/p/357242050)
+[https://zhuanlan.zhihu.com/p/583887024](https://zhuanlan.zhihu.com/p/583887024)
 [https://zhuanlan.zhihu.com/p/484520809](https://zhuanlan.zhihu.com/p/484520809)
