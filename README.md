@@ -122,7 +122,7 @@ delaunay三角剖分的算法也有很多种，这里介绍一下源码中的处
 大致这个意思，可以自己画一下。然后可以发现每个三角形编号都出现了三次，直接遍历边数组根据三角形编号把对应顶点放入即可。
 ![image.png](https://cdn.nlark.com/yuque/0/2023/png/21629258/1683727761734-88209f64-4cec-4552-a34c-6067aeebdaeb.png#averageHue=%23f9f8f7&clientId=u502f97a6-57e2-4&from=paste&height=680&id=ub87a3181&originHeight=680&originWidth=1008&originalType=binary&ratio=1&rotation=0&showTitle=false&size=12745&status=done&style=none&taskId=udc1c2e85-f195-4d9b-885b-b51b4070ee6&title=&width=1008)
 最后，将三角剖分的结构修正为世界坐标，加载到网格中，就得到了高度细节网格。
-参考资料
-[https://zhuanlan.zhihu.com/p/357242050](https://zhuanlan.zhihu.com/p/357242050)
-[https://zhuanlan.zhihu.com/p/583887024](https://zhuanlan.zhihu.com/p/583887024)
-[https://zhuanlan.zhihu.com/p/484520809](https://zhuanlan.zhihu.com/p/484520809)
+参考资料  
+[简介](https://zhuanlan.zhihu.com/p/357242050)  
+[细节](https://zhuanlan.zhihu.com/p/583887024)  
+[更多](https://zhuanlan.zhihu.com/p/484520809)  
